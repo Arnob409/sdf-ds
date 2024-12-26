@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Conferencing App</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(to right, #e0f7fa, #80deea);
+        }
+        #video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 20px;
+        }
+        video {
+            width: 100%;
+            border: 2px solid #00796b;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+        }
+        video:hover {
+            transform: scale(1.05);
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            margin: 0 5px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        #mute {
+            background-color: #f44336;
+            color: white;
+        }
+        #video {
+            background-color: #2196f3;
+            color: white;
+        }
+        #screen-share {
+            background-color: #4caf50;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+        #chat {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+        #messages {
+            height: 100px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            background-color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        #message-input {
+            width: calc(100% - 100px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #send-message {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background-color: #2196f3;
+            color: white;
+            cursor: pointer;
+        }
+        #send-message:hover {
+            opacity: 0.8;
+        }
+        #room-input {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #room-id {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-right: 5px;
+        }
+        #generated-room-id {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #00796b;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color: #00796b;">Video Conferencing App</h1>
+    <div id="room-input">
+        <input id="room-id" type="text" placeholder="Enter Room ID" />
+        <button id="join-room">Join Room</button>
+        <button id="create-room">Create Room</button>
+    </div>
+    <div id="generated-room-id"></div>
+    <div id="video-grid"></div>
+    <div class="controls">
+        <button id="mute">Mute</button>
+        <button id="video">Toggle Video</button>
+        <button id="screen-share">Share Screen</button>
+    </div>
+    <div id="chat">
+        <div id="messages"></div>
+        <input id="message-input" type="text" placeholder="Type a message..." />
+        <button id="send-message">Send</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script>
+        const videoGrid = document.getElementById('video-grid');
+        const muteButton = document.getElementById('mute');
+        const videoButton = document.getElementById('video');
+        const screenShareButton = document.getElementById('screen-share');
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendMessageButton = document.getElementById('send-message');
+        const roomIdInput = document.getElementById('room-id');
+        const joinRoomButton = document.getElementById('join-room');
+        const createRoomButton = document.getElementById('create-room');
+        const generatedRoomIdDiv = document.getElementById('generated-room-id');
+
+        const peer = new Peer();
+        const myVideo = document.createElement('video');
+        myVideo.muted = true;
+
+        navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+        }).then(stream => {
+            addVideoStream(myVideo, stream);
+
+            peer.on('call', call => {
+                call.answer(stream);
+                const video = document.createElement('video');
+                call.on('stream', userVideoStream => {
+                    addVideoStream(video, userVideoStream);
+                });
+            });
+
+            // Connect to other peers
+            joinRoomButton.addEventListener('click', () => {
+                const roomId = roomIdInput.value;
+                if (roomId) {
+                    // Logic to join the room using roomId
+                    console.log(`Joining room: ${roomId}`);
+                    // Here you would implement the logic to connect to the room
+                }
+            });
+
+            createRoomButton.addEventListener('click', () => {
+                const roomId = Math.random().toString(36).substring(2, 8); // Generate a random room ID
+                generatedRoomIdDiv.innerText = `Room ID: ${roomId}`;
+                console.log(`Created room: ${roomId}`);
+                // Logic to create a room using roomId
+            });
+        });
+
+        function addVideoStream(video, stream) {
+            video.srcObject = stream;
+            video.addEventListener('loadedmetadata', () => {
+                video.play();
+            });
+            videoGrid.append(video);
+        }
+
+        muteButton.addEventListener('click', () => {
+            // Implement mute functionality
+            const enabled = myVideo.srcObject.getAudioTracks()[0].enabled;
+            myVideo.srcObject.getAudioTracks()[0].enabled = !enabled;
+            muteButton.innerText = enabled ? 'Unmute' : 'Mute';
+        });
+
+        videoButton.addEventListener('click', () => {
+            // Implement toggle video functionality
+            const enabled = myVideo.srcObject.getVideoTracks()[0].enabled;
+            myVideo.srcObject.getVideoTracks()[0].enabled = !enabled;
+            videoButton.innerText = enabled ? 'Turn Video Off' : 'Turn Video On';
+        });
+
+        screenShareButton.addEventListener('click', () => {
+            // Implement screen sharing functionality
+            navigator.mediaDevices.getDisplayMedia({
+                video: true
+            }).then(screenStream => {
+                const screenVideo = document.createElement('video');
+                addVideoStream(screenVideo, screenStream);
+                screenVideo.srcObject = screenStream;
+                screenVideo.play();
+            });
+        });
+
+        sendMessageButton.addEventListener('click', () => {
+            const message = messageInput.value;
+            if (message) {
+                messagesDiv.innerHTML += `<div>${message}</div>`;
+                messageInput.value = '';
+                // Here you would also send the message to other peers
+            }
+        });
+    </script>
+</body>
+</html>
